@@ -1,17 +1,24 @@
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import path, re_path, include
+from rest_framework import routers
 
 from conf import settings
+from parser_books.views import BookViewSet
+
+router = routers.SimpleRouter()
+router.register(r'book', BookViewSet, basename='book')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include((router.urls, 'books'), namespace='books')),
+    path('', include('parser_books.urls', namespace='books_urls')),
 ]
 
 if settings.DEBUG:
     from django.conf.urls.static import static
     from drf_yasg import openapi
     from drf_yasg.views import get_schema_view
-    from rest_framework import permissions
+    from rest_framework import permissions, routers
 
     schema_view = get_schema_view(
         openapi.Info(
