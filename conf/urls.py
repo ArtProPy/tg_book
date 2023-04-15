@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, re_path, include
+from django.conf.urls.static import static
 from rest_framework import routers
 
 from conf import settings
@@ -10,9 +11,9 @@ router.register(r'book', BookViewSet, basename='book')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include((router.urls, 'books'), namespace='books')),
+    # path('', include((router.urls, 'books'), namespace='books')),
     path('', include('parser_books.urls', namespace='books_urls')),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
     from django.conf.urls.static import static
@@ -22,7 +23,7 @@ if settings.DEBUG:
 
     schema_view = get_schema_view(
         openapi.Info(
-            title="Notification center API",
+            title="Telegram Books API",
             default_version='0.1.0',
             description="Документация API",
         ),

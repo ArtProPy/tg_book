@@ -16,6 +16,7 @@ beautifulsoup4 = "4.11.*"
 lxml = "^4.9.1"
 aiohttp = "^3.8.3"
 pillow = "^9.3.0"
+async-drf = "^0.0.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest-django = "3.8.*"
