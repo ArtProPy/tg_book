@@ -1,4 +1,3 @@
-from drf_yasg import openapi
 from rest_framework import serializers
 
 from parser_books.models import *
@@ -11,6 +10,28 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class BookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = '__all__'
+
+
+class BookFullSerializer(serializers.ModelSerializer):
+    authors = serializers.SerializerMethodField(read_only=True)
+    genres = serializers.SerializerMethodField(read_only=True)
+    series = serializers.SerializerMethodField(read_only=True)
+
+    @staticmethod
+    def get_authors(obj):
+        return [AuthorSerializer(author).data for author in obj.authors.all()]
+
+    @staticmethod
+    def get_genres(obj):
+        return [GenreSerializer(genres).data for genres in obj.genres.all()]
+
+    @staticmethod
+    def get_series(obj):
+        return SeriesSerializer(obj.series).data
+
     class Meta:
         model = Book
         fields = '__all__'
@@ -135,22 +156,4 @@ class AsyncBookCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = '__all__'
-
-
-class ImagesCreateSerializer(serializers.ModelSerializer):
-    status = serializers.ChoiceField(choices=[x[0] for x in IMAGES_STATUS])
-
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-        if self.initial_data.get('image_url'):
-            attrs['image'] = self.initial_data['image_url']
-        if not self.initial_data.get('status'):
-            attrs['status'] = None
-        q = Images.objects.first()
-        return attrs
-
-    class Meta:
-        model = Images
-
         fields = '__all__'

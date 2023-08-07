@@ -1,17 +1,11 @@
 from django.contrib import admin
 from django.urls import path, re_path, include
 from django.conf.urls.static import static
-from rest_framework import routers
 
 from conf import settings
-from parser_books.views import BookViewSet
-
-router = routers.SimpleRouter()
-router.register(r'book', BookViewSet, basename='book')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('', include((router.urls, 'books'), namespace='books')),
     path('', include('parser_books.urls', namespace='books_urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
@@ -19,7 +13,8 @@ if settings.DEBUG:
     from django.conf.urls.static import static
     from drf_yasg import openapi
     from drf_yasg.views import get_schema_view
-    from rest_framework import permissions, routers
+    from rest_framework import permissions
+    import debug_toolbar
 
     schema_view = get_schema_view(
         openapi.Info(
@@ -52,3 +47,7 @@ if settings.DEBUG:
     )
 
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns

@@ -94,7 +94,7 @@ class ParserAsync:
                 task = asyncio.create_task(self.get_book(session, headers, f'{self.__url}{book_url}', page))
                 tasks.append(task)
                 # break
-                # ToDo
+                # ToDo for test uncommit break
 
             await asyncio.gather(*tasks, return_exceptions=False)
             self.books_data.extend([data.result() for data in tasks if isinstance(data.result(), dict)])

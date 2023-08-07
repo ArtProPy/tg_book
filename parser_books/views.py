@@ -9,12 +9,13 @@ from rest_framework.viewsets import ModelViewSet
 from parser_books import serializers
 from parser_books.decorators import query_debugger
 from parser_books.helper import ParserAsync
-from parser_books.models import Book, Images, Author, Genre, Series
+from parser_books.models import Book, Author, Genre, Series
+from parser_books.paginators import StandardResultsSetPagination
 from parser_books.parser import run_parser
 
 mapper = {
     'book': {
-        'list': serializers.BookSerializer,
+        'list': serializers.BookFullSerializer,
         'create': serializers.BookCreateSerializer
     }
 }
@@ -22,7 +23,9 @@ mapper = {
 
 class BookViewSet(ModelViewSet):
     serializer_class = serializers.BookSerializer
-    queryset = Book.objects.all()
+    queryset = Book.objects.select_related('series').prefetch_related('authors') \
+        .prefetch_related('genres')
+    pagination_class = StandardResultsSetPagination
     filterset_fields = '__all__'
 
     authors = openapi.Parameter(
@@ -85,13 +88,7 @@ class BookViewSet(ModelViewSet):
         tags=['Книги'],
     )
     def list(self, request, *args, **kwargs):
-        objects = super().list(request, *args, **kwargs)
-        paginator = Paginator(objects.data, request.GET.get('objs', 100))
-        page_number = request.GET.get('page', 0)
-
-        page_obj = paginator.get_page(page_number)
-
-        return Response(data=page_obj.object_list)
+        return super().list(request, *args, **kwargs)
 
     def update_all(self, request, *args, **kwargs):
         s_time = datetime.datetime.now()
@@ -99,7 +96,6 @@ class BookViewSet(ModelViewSet):
         print(f'update_all: {datetime.datetime.now() - s_time}')
         self.count()
         return Response()
-
 
     def test(self, request, *args, **kwargs):
         self.delete_all(request, *args, **kwargs)
@@ -127,37 +123,37 @@ class BookViewSet(ModelViewSet):
 
         return Response()
 
-    # def test_for_work(self, request, *args, **kwargs):
-    #     data_list = [
-    #         {
-    #             'step': [20],
-    #             'repetition': 5,
-    #             'pages': 5,
-    #             'method': [
-    #                 {
-    #                     'func': self.new_method,
-    #                     'times': [],
-    #                     'result': ''
-    #                 },{
-    #                     'func': self.old_method,
-    #                     'times': [],
-    #                     'result': ''
-    #                 }
-    #             ]
-    #         }
-    #     ]
-    #     for data in data_list:
-    #         for step in data['step']:
-    #             for _ in data['repetition']:
-    #                 for info in data['method']:
-    #                     s_time = datetime.datetime.now()
-    #                     info['func'](step=data['step'], last_page=data['pages'])
-    #                     info['times'].append(datetime.datetime.now() - s_time)
-    #
-    #                 info['result'] = sum([date for date in info['times']], datetime.timedelta()) / len(info['times'])
-    #
-    #
-    #     return Response()
+    def test_for_work(self, request, *args, **kwargs):
+        data_list = [
+            {
+                'step': [20],
+                'repetition': 5,
+                'pages': 5,
+                'method': [
+                    {
+                        'func': self.new_method,
+                        'times': [],
+                        'result': ''
+                    },{
+                        'func': self.old_method,
+                        'times': [],
+                        'result': ''
+                    }
+                ]
+            }
+        ]
+        for data in data_list:
+            for step in data['step']:
+                for _ in range(data['repetition']):
+                    for info in data['method']:
+                        s_time = datetime.datetime.now()
+                        info['func'](step=step, last_page=data['pages'])
+                        info['times'].append(datetime.datetime.now() - s_time)
+
+                    info['result'] = sum([date for date in info['times']], datetime.timedelta()) / len(info['times'])
+
+
+        return Response()
 
     @staticmethod
     def new_method(step, last_page):
@@ -176,10 +172,14 @@ class BookViewSet(ModelViewSet):
 
     def delete_all(self, request, *args, **kwargs):
         self.count()
-        Book.objects.all().delete()
-        Series.objects.all().delete()
-        Genre.objects.all().delete()
         Author.objects.all().delete()
+        print('Authors is deleted')
+        Genre.objects.all().delete()
+        print('Genres is deleted')
+        Series.objects.all().delete()
+        print('Series is deleted')
+        Book.objects.all().delete()
+        print('Books is deleted')
         return Response()
 
 
@@ -195,8 +195,3 @@ class AsyncBookViewSet(AsyncModelViewSet):
     # async def create(self, request, *args, **kwargs):
     #     return super().create(request, *args, **kwargs)
 
-
-class ImageViewSet(ModelViewSet):
-    serializer_class = serializers.ImagesCreateSerializer
-    queryset = Images.objects.all()
-    filterset_fields = '__all__'

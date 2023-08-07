@@ -27,7 +27,7 @@ def run_parser(all=True, first_page=1, last_page=1):
     print(f'Всего книг: {len(books_data)}')
     data = [book["title"] for book in books_data]
     data.sort()
-    [print(f'{idx + 1:<5}{book}') for idx, book in enumerate(data)]
+    # [print(f'{idx + 1:<6}{book}') for idx, book in enumerate(data)]
     print()
 
 
@@ -135,19 +135,14 @@ async def get_page_data(session: ClientSession, headers: dict, page: int) -> Non
             task = asyncio.create_task(get_book(session, headers, f'{__url}{book_url}', page))
             tasks.append(task)
             # break
-            # ToDo
+            # ToDo for test uncommit break
 
         await asyncio.gather(*tasks, return_exceptions=False)
-        # books_data.extend([data.result() for data in tasks if isinstance(data.result(), dict)])
+        books_data.extend([data.result() for data in tasks if isinstance(data.result(), dict)])
 
-        if False:
-
-            for data in tasks:
-                if isinstance(data.result(), dict):
-                    await save_to_db(data.result())
-        else:
-            books_data.extend(
-                [data.result() for data in tasks if isinstance(data.result(), dict)])
+        for data in tasks:
+            if isinstance(data.result(), dict):
+                await save_to_db(data.result())
 
 
 @sync_to_async

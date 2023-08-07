@@ -1,15 +1,17 @@
 from django.contrib import admin
 from django.db import models
+from django.db.models import Count, F
 from django.urls import reverse
 from django.utils.html import format_html
 
 from parser_books.forms import CustomAdminFileWidget
-from parser_books.models import Book, Author, Genre, Series, Images
+from parser_books.mixins import AdminListPrefetchRelatedMixin
+from parser_books.models import Book, Author, Genre, Series
 
 
 class BookInLine(admin.TabularInline):
     model = Book
-    fields = ('book_link', 'status', 'author_link', 'image_preview')
+    fields = ('book_link', 'status', 'image_preview', 'author_link')
     ordering = ('title', 'status')
     readonly_fields = fields
     extra = 0
@@ -40,7 +42,9 @@ class BookInLine(admin.TabularInline):
 
 
 @admin.register(Book)
-class BookAdmin(admin.ModelAdmin):
+class BookAdmin(AdminListPrefetchRelatedMixin, admin.ModelAdmin):
+    list_select_related = ('series',)
+    list_prefetch_related = ('authors', 'genres')
     list_display = (
         'title', 'get_authors', 'series', 'series_num', 'status', 'image_preview'
     )
@@ -74,24 +78,31 @@ class AuthorAdmin(admin.ModelAdmin):
 
 
 @admin.register(Genre)
-class GenreAdmin(admin.ModelAdmin):
+class GenreAdmin(AdminListPrefetchRelatedMixin, admin.ModelAdmin):
     list_display = ('name', 'count_books')
-    ordering = ('name',)
+    list_prefetch_related = ('books', )
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.annotate(
+            _count_books=Count('books', distinct=True)
+        ).order_by('-_count_books', 'name')
 
     @staticmethod
     @admin.display(description='Книг')
     def count_books(obj):
-        return obj.book_set.count()
+        return obj.books.count()
 
 
 @admin.register(Series)
-class SeriesAdmin(admin.ModelAdmin):
+class SeriesAdmin(AdminListPrefetchRelatedMixin, admin.ModelAdmin):
+    search_fields = ('name', )
     list_display = ('name', 'count_books', 'last_book')
     inlines = (BookInLine,)
-    ordering = ('name', )
+    list_prefetch_related = ('books',)
 
-
-@admin.register(Images)
-class SeriesAdmin(admin.ModelAdmin):
-    list_display = ('id', 'status', 'image')
-    ordering = ('status', 'image')
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.annotate(
+            _count_books=Count('books', distinct=True),
+        ).order_by('-_count_books', 'name')

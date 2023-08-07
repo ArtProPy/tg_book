@@ -1,6 +1,6 @@
 from django.urls import path
 
-from parser_books.views import BookViewSet, AsyncBookViewSet, ImageViewSet
+from parser_books.views import BookViewSet
 
 app_name = 'parser_books'
 
@@ -35,10 +35,5 @@ urlpatterns = [
         'delete-all/',
         BookViewSet.as_view({'get': 'delete_all'}),
         name='delete_all',
-    ),
-    path(
-        'image/',
-        ImageViewSet.as_view({'post': 'create'}),
-        name='image',
-    ),
+    )
 ]

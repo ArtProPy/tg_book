@@ -61,7 +61,7 @@ class Series(models.Model):
     @property
     @admin.display(description='Последняя книга в серии')
     def last_book(self):
-        return self.books.last().book_link
+        return list(self.books.all())[-1].book_link
 
     def __str__(self):
         return self.name
@@ -98,8 +98,12 @@ class Book(models.Model):
         related_name='books',
         verbose_name='Серия'
     )
-    authors = models.ManyToManyField(Author, verbose_name='Авторы', blank=True)
-    genres = models.ManyToManyField(Genre, verbose_name='Жанры', blank=True)
+    authors = models.ManyToManyField(
+        Author, verbose_name='Авторы', blank=True, related_name='books'
+    )
+    genres = models.ManyToManyField(
+        Genre, verbose_name='Жанры', blank=True, related_name='books'
+    )
 
     @property
     def image_url(self):
@@ -132,34 +136,3 @@ IMAGES_STATUS = (
     ('Закончена', 'finished'),
     ('Заморожен', 'frozen')
 )
-
-
-class Images(models.Model):
-    image = models.ImageField(
-        'Изображение',
-        upload_to='images/',
-        default='images/default.jpg',
-        blank=True,
-        max_length=250
-    )
-    status = models.CharField(
-        'Статус книги',
-        choices=IMAGES_STATUS,
-        default='default',
-        max_length=20,
-        blank=True,
-        null=True
-    )
-
-    @property
-    def image_url(self):
-        if self.image and hasattr(self.image, 'url'):
-            return self.image.url
-
-    def __str__(self):
-        return self.image_url
-
-    class Meta:
-        unique_together = ('image', 'status', )
-        verbose_name = 'Изображение'
-        verbose_name_plural = 'Изображения'
